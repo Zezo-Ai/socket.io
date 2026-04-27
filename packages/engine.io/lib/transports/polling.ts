@@ -122,7 +122,8 @@ export class Polling extends Transport {
     const isBinary = "application/octet-stream" === req.headers["content-type"];
 
     if (isBinary && this.protocol === 4) {
-      return this.onError("invalid content");
+      this.onError("invalid content");
+      return res.writeHead(400).end();
     }
 
     this.dataReq = req;

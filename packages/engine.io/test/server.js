@@ -7,7 +7,13 @@ const path = require("path");
 const exec = require("child_process").exec;
 const zlib = require("zlib");
 const { Server, Socket, attach } = require("..");
-const { ClientSocket, listen, createPartialDone } = require("./common");
+const {
+  ClientSocket,
+  listen,
+  listenAsync,
+  runHandshake,
+  createPartialDone,
+} = require("./common");
 const expect = require("expect.js");
 const request = require("superagent");
 const cookieMod = require("cookie");
@@ -1457,6 +1463,26 @@ describe("server", () => {
         });
       },
     );
+
+    it("should abort the polling data request if the content type is invalid", async () => {
+      const { port, close } = await listenAsync();
+      const { sid } = await runHandshake(port);
+
+      const res = await fetch(
+        `http://localhost:${port}/engine.io/?EIO=4&transport=polling&sid=${sid}`,
+        {
+          method: "POST",
+          headers: {
+            "content-type": "application/octet-stream",
+          },
+          body: Buffer.of(1, 2, 3),
+        },
+      );
+
+      expect(res.status).to.eql(400);
+
+      close();
+    });
 
     // tests https://github.com/LearnBoost/engine.io-client/issues/207
     // websocket test, transport error

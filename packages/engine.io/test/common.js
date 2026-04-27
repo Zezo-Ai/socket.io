@@ -60,6 +60,32 @@ exports.listen = (opts, fn) => {
   return e;
 };
 
+exports.listenAsync = function listenAsync(opts = {}) {
+  return new Promise((resolve) => {
+    const engine = exports.listen(opts, (port) => {
+      resolve({
+        port,
+        close: () => {
+          engine.close();
+          if (engine.httpServer) {
+            engine.httpServer.close();
+          }
+        },
+      });
+    });
+  });
+};
+
+exports.runHandshake = async function runHandshake(port) {
+  const res = await fetch(
+    `http://localhost:${port}/engine.io/?EIO=4&transport=polling`,
+  );
+  const data = await res.text();
+  return {
+    sid: JSON.parse(data.substring(1)).sid,
+  };
+};
+
 exports.ClientSocket = Socket;
 
 exports.createPartialDone = (done, count) => {
